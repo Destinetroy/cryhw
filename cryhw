@@ -4,6 +4,7 @@ from collections import defaultdict
 import string
 import enchant
 
+
 # 标准英语字母频率（降序排列）
 STANDARD_FREQ = 'ETAOINSHRDLCUMWFGYPBVKJXQZ'
 
