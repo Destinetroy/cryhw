@@ -25,10 +25,21 @@ class SubstitutionCipherTool:
         self.ciphertext = tk.Entry(self.master, width=50)
         self.ciphertext.grid(row=0, column=1, padx=5, pady=5)
 
+        # 明文输入
+        ttk.Label(self.master, text="明文:").grid(row=2, column=0, padx=5, pady=5, sticky='e')
+        self.ciphertext = tk.Entry(self.master, width=50)
+        self.ciphertext.grid(row=2, column=1, padx=5, pady=5)
+
         # 明文显示
         ttk.Label(self.master, text="明文:").grid(row=1, column=0, padx=5, pady=5, sticky='e')
         self.plaintext = tk.Entry(self.master, width=50)
         self.plaintext.grid(row=1, column=1, padx=5, pady=5)
+        self.plaintext.config(state='readonly')
+
+        # 密文显示
+        ttk.Label(self.master, text="密文:").grid(row=3, column=0, padx=5, pady=5, sticky='e')
+        self.plaintext = tk.Entry(self.master, width=50)
+        self.plaintext.grid(row=3, column=1, padx=5, pady=5)
         self.plaintext.config(state='readonly')
 
         # 加密按钮
