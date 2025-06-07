@@ -1,0 +1,142 @@
+import tkinter as tk
+from tkinter import ttk, messagebox
+from collections import defaultdict
+import string
+import enchant
+
+# 标准英语字母频率（降序排列）
+STANDARD_FREQ = 'ETAOINSHRDLCUMWFGYPBVKJXQZ'
+
+class SubstitutionCipherTool:
+    def __init__(self, master):
+        self.master = master
+        master.title("单表代换辅助工具")
+
+        # 初始化密钥字典
+        self.key = {letter: None for letter in string.ascii_uppercase}
+
+        # 创建界面组件
+        self.create_widgets()
+
+    def create_widgets(self):
+        # 密文输入
+        ttk.Label(self.master, text="密文:").grid(row=0, column=0, padx=5, pady=5, sticky='e')
+        self.ciphertext = tk.Entry(self.master, width=50)
+        self.ciphertext.grid(row=0, column=1, padx=5, pady=5)
+
+        # 明文显示
+        ttk.Label(self.master, text="明文:").grid(row=1, column=0, padx=5, pady=5, sticky='e')
+        self.plaintext = tk.Entry(self.master, width=50)
+        self.plaintext.grid(row=1, column=1, padx=5, pady=5)
+        self.plaintext.config(state='readonly')
+
+        # 加密按钮
+        self.encrypt_button = ttk.Button(self.master, text="加密", command=self.encrypt)
+        self.encrypt_button.grid(row=2, column=0, padx=5, pady=5)
+
+        # 解密按钮
+        self.decrypt_button = ttk.Button(self.master, text="解密", command=self.decrypt)
+        self.decrypt_button.grid(row=2, column=1, padx=5, pady=5)
+
+        # 频率分析按钮
+        self.freq_button = ttk.Button(self.master, text="频率分析", command=self.frequency_analysis)
+        self.freq_button.grid(row=3, column=0, padx=5, pady=5)
+
+        # 上下文分析按钮
+        self.context_button = ttk.Button(self.master, text="上下文分析", command=self.context_analysis)
+        self.context_button.grid(row=3, column=1, padx=5, pady=5)
+
+        # 密钥指定输入
+        ttk.Label(self.master, text="指定密钥 (格式: A->B):").grid(row=4, column=0, padx=5, pady=5, sticky='e')
+        self.key_entry = tk.Entry(self.master, width=50)
+        self.key_entry.grid(row=4, column=1, padx=5, pady=5)
+
+        # 应用密钥按钮
+        self.apply_key_button = ttk.Button(self.master, text="应用密钥", command=self.apply_key)
+        self.apply_key_button.grid(row=5, column=0, columnspan=2, padx=5, pady=5)
+
+    def encrypt(self):
+        ciphertext = self.ciphertext.get().upper()
+        encrypted_text = ""
+        for char in ciphertext:
+            if char in self.key and self.key[char]:
+                encrypted_text += self.key[char]
+            else:
+                encrypted_text += char
+        self.plaintext.config(state='normal')
+        self.plaintext.delete(0, tk.END)
+        self.plaintext.insert(0, encrypted_text)
+        self.plaintext.config(state='readonly')
+
+    def decrypt(self):
+        ciphertext = self.ciphertext.get().upper()
+        decrypted_text = ""
+        reverse_key = {value: key for key, value in self.key.items() if value}
+        for char in ciphertext:
+            if char in reverse_key:
+                decrypted_text += reverse_key[char]
+            else:
+                decrypted_text += char
+        self.plaintext.config(state='normal')
+        self.plaintext.delete(0, tk.END)
+        self.plaintext.insert(0, decrypted_text)
+        self.plaintext.config(state='readonly')
+
+    def frequency_analysis(self):
+        ciphertext = self.ciphertext.get().upper()
+        freq_dict = defaultdict(int)
+        for char in ciphertext:
+            if char in string.ascii_uppercase:
+                freq_dict[char] += 1
+        sorted_chars = sorted(freq_dict, key=freq_dict.get, reverse=True)
+        for i, char in enumerate(sorted_chars):
+            if i < len(STANDARD_FREQ):
+                self.key[char] = STANDARD_FREQ[i]
+        messagebox.showinfo("频率分析结果", f"推测密钥: {self.key}")
+
+    def context_analysis(self):
+        cipher = self.ciphertext.get().upper()
+        common_endings = ['E', 'T', 'A', 'O', 'N', 'ED', 'ING', 'TION']
+        suggestions = []
+        broker = enchant.Broker()
+        d = broker.request_dict("en_US")
+        for length in [1, 2, 3]:
+            for i in range(len(cipher) - length + 1):
+                segment = cipher[i:i+length]
+                for ending in common_endings:
+                    if segment.endswith(ending):
+                        for word in d.suggest(segment):
+                            if word.endswith(ending):
+                                # 确保 segment 和 word 长度匹配
+                                min_length = min(len(segment) - len(ending), len(word) - len(ending))
+                                for j in range(min_length):
+                                    suggestions.append(f"{segment[j]} -> {word[j]}")
+        unique_suggestions = list(set(suggestions))
+        valid_suggestions = []
+        for suggestion in unique_suggestions:
+            old_char, new_char = suggestion.split(' -> ')
+            if old_char not in self.key or not self.key[old_char] or self.key[old_char] == new_char:
+                valid_suggestions.append(suggestion)
+        suggestion_str = "\n".join(valid_suggestions) if valid_suggestions else "无法提供上下文映射建议。"
+        messagebox.showinfo("上下文分析建议", suggestion_str)
+
+    def apply_key(self):
+        key_input = self.key_entry.get()
+        try:
+            for pair in key_input.split(','):
+                if '->' in pair:
+                    old_char, new_char = pair.split('->')
+                    old_char = old_char.strip().upper()
+                    new_char = new_char.strip().upper()
+                    if old_char in string.ascii_uppercase and new_char in string.ascii_uppercase:
+                        self.key[old_char] = new_char
+                    else:
+                        messagebox.showerror("错误", "密钥格式错误，请使用 A->B 的格式。")
+                        return
+            messagebox.showinfo("密钥应用成功", f"当前密钥: {self.key}")
+        except ValueError:
+            messagebox.showerror("错误", "密钥格式错误，请使用 A->B 的格式。")
+
+root = tk.Tk()
+app = SubstitutionCipherTool(root)
+root.mainloop()
