@@ -25,21 +25,10 @@ class SubstitutionCipherTool:
         self.ciphertext = tk.Entry(self.master, width=50)
         self.ciphertext.grid(row=0, column=1, padx=5, pady=5)
 
-        # 明文输入
-        ttk.Label(self.master, text="明文:").grid(row=2, column=0, padx=5, pady=5, sticky='e')
-        self.ciphertext = tk.Entry(self.master, width=50)
-        self.ciphertext.grid(row=2, column=1, padx=5, pady=5)
-
         # 明文显示
         ttk.Label(self.master, text="明文:").grid(row=1, column=0, padx=5, pady=5, sticky='e')
         self.plaintext = tk.Entry(self.master, width=50)
         self.plaintext.grid(row=1, column=1, padx=5, pady=5)
-        self.plaintext.config(state='readonly')
-
-        # 密文显示
-        ttk.Label(self.master, text="密文:").grid(row=3, column=0, padx=5, pady=5, sticky='e')
-        self.plaintext = tk.Entry(self.master, width=50)
-        self.plaintext.grid(row=3, column=1, padx=5, pady=5)
         self.plaintext.config(state='readonly')
 
         # 加密按钮
@@ -104,6 +93,7 @@ class SubstitutionCipherTool:
         for i, char in enumerate(sorted_chars):
             if i < len(STANDARD_FREQ):
                 self.key[char] = STANDARD_FREQ[i]
+        self.update_reverse_key_dict()
         messagebox.showinfo("频率分析结果", f"推测密钥: {self.key}")
 
     def context_analysis(self):
@@ -145,9 +135,12 @@ class SubstitutionCipherTool:
                     else:
                         messagebox.showerror("错误", "密钥格式错误，请使用 A->B 的格式。")
                         return
+            self.update_reverse_key_dict()
             messagebox.showinfo("密钥应用成功", f"当前密钥: {self.key}")
         except ValueError:
             messagebox.showerror("错误", "密钥格式错误，请使用 A->B 的格式。")
+    def update_reverse_key_dict(self):
+        self.reverse_key_dict = {v: k for k, v in self.key.items() if v is not None}
 
 root = tk.Tk()
 app = SubstitutionCipherTool(root)
